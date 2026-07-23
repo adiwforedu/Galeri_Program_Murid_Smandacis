@@ -7,6 +7,12 @@
     <!-- Font sistem ala Apple/Android -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK (Versi Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js"></script>
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -18,17 +24,20 @@
     <main id="portal-view" class="active">
         
         <!-- Header / Widget ala Smartphone -->
-        <header class="os-header">
+        <header class="os-header" id="main-header">
+            <div class="admin-badge badge-edit-header hidden" id="btn-edit-header" title="Edit Judul">
+                <i class="fa-solid fa-pen"></i>
+            </div>
             <div class="header-content">
                 <p id="date-display" class="date-text"></p>
                 <h1 id="clock-display">00:00</h1>
-                <p class="header-title">Galeri Program Siswa</p>
-                <p class="header-desc">Kumpulan akses cepat layanan dan program unggulan.</p>
+                <p class="header-title" id="header-title-text">Galeri Program Siswa</p>
+                <p class="header-desc" id="header-desc-text">Kumpulan akses cepat layanan dan program unggulan.</p>
             </div>
         </header>
 
         <!-- Layar Utama / App Drawer -->
-        <div class="app-grid" id="apps-container">
+        <div class="apps-grid" id="apps-container">
             <!-- App Icons akan dirender di sini via JS -->
         </div>
 
@@ -82,7 +91,7 @@
         </div>
     </div>
 
-    <!-- Modal Form Tambah/Edit -->
+    <!-- Modal Form Tambah/Edit Aplikasi -->
     <div id="app-form-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <h3 id="form-modal-title" class="text-center">Form Aplikasi</h3>
@@ -104,8 +113,28 @@
             </div>
             <input type="hidden" id="form-id" />
             <div class="modal-actions-row mt-4">
+                <button id="btn-delete-app" class="btn-danger hidden"><i class="fa-solid fa-trash"></i></button>
                 <button id="btn-cancel-form" class="btn-secondary">Batal</button>
                 <button id="btn-submit-form" class="btn-primary">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Form Edit Header -->
+    <div id="header-form-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-center"><i class="fa-solid fa-pen-to-square"></i> Edit Header</h3>
+            <div class="form-group mt-3">
+                <label>Judul Utama</label>
+                <input type="text" id="form-header-title" placeholder="Misal: Galeri Program Siswa" />
+            </div>
+            <div class="form-group">
+                <label>Deskripsi Singkat</label>
+                <input type="text" id="form-header-desc" placeholder="Kumpulan akses cepat..." />
+            </div>
+            <div class="modal-actions-row mt-4">
+                <button id="btn-cancel-header-form" class="btn-secondary">Batal</button>
+                <button id="btn-submit-header-form" class="btn-primary">Simpan</button>
             </div>
         </div>
     </div>
