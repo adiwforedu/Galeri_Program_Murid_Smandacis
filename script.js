@@ -1,8 +1,13 @@
 // Konfigurasi Firebase Anda
 // ⚠️ PASTIKAN MENGGANTI INI DENGAN CONFIG FIREBASE SEKOLAH ANDA ⚠️
 const firebaseConfig = {
-    // Contoh format: databaseURL: "https://project-nama-anda.firebaseio.com"
-    databaseURL: "https://dummy-preview-only.firebaseio.com" 
+  apiKey: "AIzaSyBty_UirBiOCf_crELfvaVXS3e1xcH4nIQ",
+  authDomain: "galeri-program-murid.firebaseapp.com",
+  databaseURL: "https://galeri-program-murid-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "galeri-program-murid",
+  storageBucket: "galeri-program-murid.firebasestorage.app",
+  messagingSenderId: "586684582158",
+  appId: "1:586684582158:web:84d8ba42fb3423c8bb2f5f"
 };
 
 // Inisialisasi Firebase
