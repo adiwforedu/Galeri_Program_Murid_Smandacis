@@ -266,15 +266,22 @@ function openApp(app) {
         return;
     }
     
-    appIframe.src = app.url;
+    let finalUrl = app.url;
+    
+    // Auto-convert Looker Studio URLs to embed mode to bypass X-Frame-Options
+    if (finalUrl.includes('lookerstudio.google.com/reporting/')) {
+        finalUrl = finalUrl.replace('/reporting/', '/embed/reporting/');
+    }
+    
+    appIframe.src = finalUrl;
     viewerTitle.textContent = app.name;
-    document.getElementById('btn-open-external').href = app.url; // Update link kompas
+    document.getElementById('btn-open-external').href = finalUrl; // Update link kompas
     portalView.classList.add('hidden');
     viewerView.classList.remove('hidden');
     document.getElementById('iframe-fallback').classList.add('hidden');
     
     appIframe.onerror = function() {
-        document.getElementById('fallback-link').href = app.url;
+        document.getElementById('fallback-link').href = finalUrl;
         document.getElementById('iframe-fallback').classList.remove('hidden');
     };
 }
