@@ -20,7 +20,7 @@ const defaultApps = [
     {
         id: 'app-3',
         name: 'Inklusif',
-        url: 'https://example.com/inklusif',
+        url: 'https://adiwforedu.github.io/PelitaSMANDACIS/',
         icon: 'fa-solid fa-users-rays',
         color: '#3b82f6'
     }
