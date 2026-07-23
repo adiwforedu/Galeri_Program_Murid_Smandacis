@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Portal Aplikasi Sekolah</title>
+    <!-- Font sistem ala Apple/Android -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Tombol Mode Gelap/Terang -->
+    <button id="theme-toggle" class="theme-btn" title="Ganti Tema">
+        <i class="fa-solid fa-moon"></i>
+    </button>
+
+    <main id="portal-view" class="active">
+        
+        <!-- Header / Widget ala Smartphone -->
+        <header class="os-header">
+            <div class="header-content">
+                <p id="date-display" class="date-text"></p>
+                <h1 id="clock-display">00:00</h1>
+                <p class="header-title">Galeri Program Siswa</p>
+                <p class="header-desc">Kumpulan akses cepat layanan dan program unggulan.</p>
+            </div>
+        </header>
+
+        <!-- Layar Utama / App Drawer -->
+        <div class="app-grid" id="apps-container">
+            <!-- App Icons akan dirender di sini via JS -->
+        </div>
+
+        <!-- Dock bawah ala iOS / Android -->
+        <div class="os-dock-wrapper">
+            <div class="os-dock">
+                <button id="btn-admin-toggle" class="dock-app" title="Pengaturan Admin">
+                    <div class="dock-icon bg-gray">
+                        <i class="fa-solid fa-gear"></i>
+                    </div>
+                    <span>Admin</span>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Viewer Aplikasi -->
+    <section id="viewer-view" class="hidden">
+        <div class="viewer-header">
+            <button id="btn-back" class="btn-text">
+                <i class="fa-solid fa-chevron-left"></i> Kembali
+            </button>
+            <h2 id="viewer-title">Judul Aplikasi</h2>
+            <a id="btn-open-external" href="#" target="_blank" class="btn-text" title="Buka di Browser">
+                <i class="fa-solid fa-compass"></i>
+            </a>
+        </div>
+        <div class="iframe-container">
+            <iframe id="app-iframe" src="" frameborder="0" allowfullscreen></iframe>
+            <div id="iframe-fallback" class="hidden">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <p>Aplikasi ini tidak mengizinkan untuk ditampilkan di dalam portal.</p>
+                <a id="fallback-link" href="#" target="_blank" class="btn-primary mt-3">Buka Aplikasi di Tab Baru</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal Password -->
+    <div id="password-modal" class="modal-overlay hidden">
+        <div class="modal-content text-center">
+            <div class="modal-icon"><i class="fa-solid fa-lock"></i></div>
+            <h3>Otorisasi Admin</h3>
+            <p>Masukkan kata sandi (PIN) untuk mengedit aplikasi.</p>
+            <input type="password" id="admin-password" placeholder="Kata Sandi..." />
+            <p id="auth-error" class="error-text hidden">Kata sandi salah!</p>
+            <div class="modal-actions-column">
+                <button id="btn-submit-auth" class="btn-primary full-width">Masuk</button>
+                <button id="btn-cancel-auth" class="btn-text full-width">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Form Tambah/Edit -->
+    <div id="app-form-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 id="form-modal-title" class="text-center">Form Aplikasi</h3>
+            <div class="form-group">
+                <label>Nama Aplikasi (Pendek)</label>
+                <input type="text" id="form-name" placeholder="Mis: E-Rapor" />
+            </div>
+            <div class="form-group">
+                <label>URL / Tautan Aplikasi</label>
+                <input type="url" id="form-url" placeholder="https://..." />
+            </div>
+            <div class="form-group">
+                <label>Ikon (FontAwesome)</label>
+                <input type="text" id="form-icon" placeholder="fa-solid fa-book" />
+            </div>
+            <div class="form-group">
+                <label>Warna Background (Hex)</label>
+                <input type="text" id="form-color" placeholder="#2563eb" />
+            </div>
+            <input type="hidden" id="form-id" />
+            <div class="modal-actions-row mt-4">
+                <button id="btn-cancel-form" class="btn-secondary">Batal</button>
+                <button id="btn-submit-form" class="btn-primary">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Hapus -->
+    <div id="delete-modal" class="modal-overlay hidden">
+        <div class="modal-content text-center">
+            <div class="modal-icon danger"><i class="fa-solid fa-trash-can"></i></div>
+            <h3>Hapus Aplikasi?</h3>
+            <p>Yakin ingin menghapus <strong id="delete-app-name"></strong>?</p>
+            <input type="hidden" id="delete-app-id" />
+            <div class="modal-actions-column mt-4">
+                <button id="btn-confirm-delete" class="btn-danger full-width">Hapus</button>
+                <button id="btn-cancel-delete" class="btn-text full-width">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Pengaturan Portal -->
+    <div id="settings-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-center"><i class="fa-solid fa-palette"></i> Warna Tema</h3>
+            <div class="form-group mt-3">
+                <label>Warna Utama (Aksen & Tombol)</label>
+                <input type="color" id="setting-primary-color" style="height: 40px; padding: 0.2rem; cursor: pointer;" />
+            </div>
+            <div class="form-group">
+                <label>Warna Header</label>
+                <input type="color" id="setting-header-color" style="height: 40px; padding: 0.2rem; cursor: pointer;" />
+            </div>
+            <div class="modal-actions-row mt-4">
+                <button id="btn-cancel-settings" class="btn-secondary">Batal</button>
+                <button id="btn-submit-settings" class="btn-primary">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Sedang Dikembangkan -->
+    <div id="construction-modal" class="modal-overlay hidden">
+        <div class="modal-content text-center">
+            <div class="construction-icon">
+                <i class="fa-solid fa-screwdriver-wrench fa-bounce"></i>
+            </div>
+            <h2 class="blinking-text">DIANTOS NUJU DIKEMBANGKEUN</h2>
+            <button id="btn-close-construction" class="btn-primary full-width mt-4">Tutup</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
