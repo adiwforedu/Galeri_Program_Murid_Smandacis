@@ -66,14 +66,14 @@ function loadApps() {
             apps.sort((a, b) => a.id.localeCompare(b.id)); // Urutkan agar rapi
             renderApps();
         } else {
-            // Jika kosong, masukkan data default otomatis
-            const defaultApps = [
+            // Jika database kosong, tampilkan data default (TIDAK disave ke firebase otomatis karena belum login)
+            apps = [
                 { id: 'app-1', name: 'Pembentukan Karakter Gapura Panca Waluya', url: 'https://example.com/gapura', icon: 'fa-solid fa-hands-holding-child', color: '#f59e0b' },
                 { id: 'app-2', name: 'Nadi Hijau', url: 'https://example.com/nadihijau', icon: 'fa-solid fa-leaf', color: '#10b981' },
                 { id: 'app-3', name: 'Inklusif', url: 'https://example.com/inklusif', icon: 'fa-solid fa-users-rays', color: '#3b82f6' },
                 { id: 'app-4', name: 'Perpustakaan', url: 'https://example.com/perpus', icon: 'fa-solid fa-book-open', color: '#8b5cf6' }
             ];
-            defaultApps.forEach(app => database.ref('apps/' + app.id).set(app));
+            renderApps();
         }
     }, (error) => {
         console.error("Firebase error: ", error);
@@ -124,11 +124,29 @@ function loadGlobalSettings() {
             if(footer) footer.innerHTML = data.text;
         }
     });
+    database.ref('settings/theme').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            portalTheme = { ...portalTheme, ...data };
+            applyGlobalTheme();
+        }
+    });
 }
 
 function applyGlobalTheme() {
-    document.documentElement.style.setProperty('--primary', portalTheme.primary);
-    document.documentElement.style.setProperty('--header-bg', portalTheme.header);
+    document.documentElement.style.setProperty('--primary', portalTheme.primary || '#007aff');
+    document.documentElement.style.setProperty('--header-bg', portalTheme.header || '#0f172a');
+    
+    const bgContainer = document.getElementById('app-bg-container');
+    if (bgContainer) {
+        if (portalTheme.bgImage) {
+            bgContainer.style.backgroundImage = `url(${portalTheme.bgImage})`;
+            bgContainer.classList.add('has-image');
+        } else {
+            bgContainer.style.backgroundImage = 'none';
+            bgContainer.classList.remove('has-image');
+        }
+    }
 }
 
 function initTheme() {
@@ -235,6 +253,12 @@ function editApp(id, event) {
     appFormModal.classList.remove('hidden');
 }
 
+function deleteApp(id) {
+    const deleteModal = document.getElementById('delete-modal');
+    document.getElementById('delete-app-id').value = id;
+    deleteModal.classList.remove('hidden');
+}
+
 function saveAppForm() {
     const id = document.getElementById('form-id').value;
     const newApp = {
@@ -274,8 +298,8 @@ function saveAppForm() {
 }
 
 function authenticateAdmin() {
+    const email = document.getElementById('admin-email').value;
     const pwd = document.getElementById('admin-password').value;
-    const ADMIN_EMAIL = 'admin@sekolah.com'; // Email default untuk Firebase Auth
     
     if (!database || firebaseConfig.databaseURL.includes("dummy-preview-only")) {
         // Fallback untuk preview tanpa Firebase Auth
@@ -288,7 +312,7 @@ function authenticateAdmin() {
     }
     
     // Auth sungguhan via Firebase
-    firebase.auth().signInWithEmailAndPassword(ADMIN_EMAIL, pwd)
+    firebase.auth().signInWithEmailAndPassword(email, pwd)
         .then(() => enableAdminMode())
         .catch((error) => {
             console.error(error);
@@ -315,6 +339,13 @@ function enableAdminMode() {
         headerTitle.innerHTML += ' <i class="fa-solid fa-pen" style="font-size: 0.8rem; margin-left: 0.5rem; color: rgba(255,255,255,0.7);"></i>';
     }
     
+    // Jika database kosong, simpan aplikasi bawaan secara permanen
+    if (apps.length > 0 && apps[0].id === 'app-1' && database) {
+        apps.forEach(app => {
+            database.ref('apps/' + app.id).set(app).catch(e => console.error(e));
+        });
+    }
+    
     renderApps(); 
 }
 
@@ -338,7 +369,7 @@ function setupEventListeners() {
             } catch(e) { console.error("SignOut error", e); }
             portalView.classList.remove('admin-mode');
             
-            btnAdminToggle.innerHTML = `<i class="fa-solid fa-gear"></i>`;
+            btnAdminToggle.innerHTML = `<i class="fa-solid fa-pen"></i>`;
             btnAdminToggle.classList.remove('admin-btn-active');
             
             // Hapus ikon pensil dari header
@@ -349,7 +380,7 @@ function setupEventListeners() {
         } else {
             passwordModal.classList.remove('hidden');
             document.getElementById('admin-password').value = '';
-            setTimeout(() => document.getElementById('admin-password').focus(), 100);
+            setTimeout(() => document.getElementById('admin-email').focus(), 100);
         }
     });
 
@@ -372,10 +403,10 @@ function setupEventListeners() {
     });
 
     // Password Modal
-    document.getElementById('btn-cancel-auth').addEventListener('click', () => {
+    document.getElementById('btn-cancel-password').addEventListener('click', () => {
         passwordModal.classList.add('hidden');
     });
-    document.getElementById('btn-submit-auth').addEventListener('click', authenticateAdmin);
+    document.getElementById('btn-submit-password').addEventListener('click', authenticateAdmin);
     document.getElementById('admin-password').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') authenticateAdmin();
     });
@@ -385,36 +416,85 @@ function setupEventListeners() {
         document.getElementById('master-settings-modal').classList.add('hidden');
     });
 
+    // Image processing for background
+    document.getElementById('master-bg-file').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                // Compress image using canvas
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 1000; // max width for background
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                // Convert to base64 with 0.6 quality to keep size small
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                document.getElementById('master-bg-base64').value = dataUrl;
+                
+                // Preview instantly
+                const bgContainer = document.getElementById('app-bg-container');
+                if (bgContainer) {
+                    bgContainer.style.backgroundImage = `url(${dataUrl})`;
+                    bgContainer.classList.add('has-image');
+                }
+            }
+            img.src = event.target.result;
+        }
+        reader.readAsDataURL(file);
+    });
+    
+    document.getElementById('btn-clear-bg').addEventListener('click', () => {
+        document.getElementById('master-bg-file').value = '';
+        document.getElementById('master-bg-base64').value = '';
+        const bgContainer = document.getElementById('app-bg-container');
+        if (bgContainer) {
+            bgContainer.style.backgroundImage = 'none';
+            bgContainer.classList.remove('has-image');
+        }
+    });
+
     document.getElementById('btn-submit-master').addEventListener('click', () => {
-        const title = document.getElementById('master-header-title').value || 'Galeri Program Siswa';
+        const title = document.getElementById('master-header-title').value || 'Galeri Program Murid';
         const desc = document.getElementById('master-header-desc').value || 'Kumpulan akses cepat...';
         const footerText = document.getElementById('master-footer-text').value || '&copy; 2026 Smandacis';
         
         // Save Theme
         portalTheme.primary = document.getElementById('master-primary-color').value;
         portalTheme.header = document.getElementById('master-header-color').value;
+        const newBg = document.getElementById('master-bg-base64').value;
+        if (newBg !== undefined) {
+            if (newBg === '') portalTheme.bgImage = null;
+            else portalTheme.bgImage = newBg;
+        }
+        
         localStorage.setItem('school_portal_colors', JSON.stringify(portalTheme));
         applyGlobalTheme();
         
-        // Save Header & Footer (Dummy mode)
-        if (!database || firebaseConfig.databaseURL.includes("dummy-preview-only")) {
+        // Save to Firebase
+        if (database && !firebaseConfig.databaseURL.includes("dummy-preview-only")) {
+            Promise.all([
+                database.ref('settings/header').set({ title, desc }),
+                database.ref('settings/footer').set({ text: footerText }),
+                database.ref('settings/theme').set(portalTheme)
+            ]).then(() => {
+                document.getElementById('header-title-text').innerHTML = title + ' <i class="fa-solid fa-pen" style="font-size: 0.8rem; margin-left: 0.5rem; color: rgba(255,255,255,0.7);"></i>';
+                document.getElementById('master-settings-modal').classList.add('hidden');
+            }).catch(e => alert("Gagal menyimpan pengaturan: " + e.message));
+        } else {
             document.getElementById('header-title-text').innerHTML = title + ' <i class="fa-solid fa-pen" style="font-size: 0.8rem; margin-left: 0.5rem; color: rgba(255,255,255,0.7);"></i>';
             document.getElementById('header-desc-text').textContent = desc;
             const footerEl = document.getElementById('footer-text');
             if (footerEl) footerEl.innerHTML = footerText;
-            
             document.getElementById('master-settings-modal').classList.add('hidden');
-            return;
         }
-        
-        // Save to Firebase
-        Promise.all([
-            database.ref('settings/header').set({ title, desc }),
-            database.ref('settings/footer').set({ text: footerText })
-        ]).then(() => {
-            document.getElementById('header-title-text').innerHTML = title + ' <i class="fa-solid fa-pen" style="font-size: 0.8rem; margin-left: 0.5rem; color: rgba(255,255,255,0.7);"></i>';
-            document.getElementById('master-settings-modal').classList.add('hidden');
-        }).catch(e => alert("Gagal menyimpan pengaturan: " + e.message));
     });
 
     document.getElementById('btn-logout-admin').addEventListener('click', () => {

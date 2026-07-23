@@ -16,13 +16,15 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="app-bg-container" class="app-bg-container"></div>
+    
     <button id="theme-toggle" class="theme-btn" title="Ganti Tema">
         <i class="fa-solid fa-moon"></i>
     </button>
     
     <!-- Tombol Admin Utama (Kiri Atas) -->
     <button id="btn-admin-toggle" class="theme-btn admin-btn" title="Pengaturan Admin">
-        <i class="fa-solid fa-gear"></i>
+        <i class="fa-solid fa-pen"></i>
     </button>
 
     <main id="portal-view" class="active">
@@ -32,7 +34,7 @@
             <div class="header-content">
                 <p id="date-display" class="date-text"></p>
                 <h1 id="clock-display">00:00</h1>
-                <p class="header-title" id="header-title-text">Galeri Program Siswa</p>
+                <p class="header-title" id="header-title-text">Galeri Program Murid</p>
                 <p class="header-desc" id="header-desc-text">Kumpulan akses cepat layanan dan program unggulan.</p>
             </div>
         </header>
@@ -70,17 +72,18 @@
         </div>
     </section>
 
-    <!-- Modal Password -->
+    <!-- Modal Password Admin -->
     <div id="password-modal" class="modal-overlay hidden">
-        <div class="modal-content text-center">
-            <div class="modal-icon"><i class="fa-solid fa-lock"></i></div>
+        <div class="modal-content text-center" style="max-width: 320px;">
+            <i class="fa-solid fa-lock fa-2x mb-2" style="color: var(--primary);"></i>
             <h3>Otorisasi Admin</h3>
-            <p>Masukkan kata sandi (PIN) untuk mengedit aplikasi.</p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem;">Masukkan email dan sandi untuk mengedit.</p>
+            <input type="email" id="admin-email" placeholder="Email Admin..." />
             <input type="password" id="admin-password" placeholder="Kata Sandi..." />
-            <p id="auth-error" class="error-text hidden">Kata sandi salah!</p>
-            <div class="modal-actions-column">
-                <button id="btn-submit-auth" class="btn-primary full-width">Masuk</button>
-                <button id="btn-cancel-auth" class="btn-text full-width">Batal</button>
+            <p id="auth-error" class="hidden error-text">Otorisasi gagal!</p>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem;">
+                <button class="btn btn-primary w-100" id="btn-submit-password">Masuk</button>
+                <button class="btn btn-text w-100" id="btn-cancel-password">Batal</button>
             </div>
         </div>
     </div>
@@ -114,6 +117,20 @@
         </div>
     </div>
 
+    <!-- Modal Konfirmasi Hapus -->
+    <div id="delete-modal" class="modal-overlay hidden">
+        <div class="modal-content text-center" style="max-width: 320px;">
+            <i class="fa-solid fa-triangle-exclamation fa-2x mb-2" style="color: var(--danger);"></i>
+            <h3>Hapus Aplikasi?</h3>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;">Aplikasi ini akan dihapus permanen. Lanjutkan?</p>
+            <input type="hidden" id="delete-app-id" />
+            <div class="modal-actions-row">
+                <button id="btn-cancel-delete" class="btn btn-secondary">Batal</button>
+                <button id="btn-confirm-delete" class="btn btn-danger">Hapus</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Master Settings Modal -->
     <div id="master-settings-modal" class="modal-overlay hidden">
         <div class="modal-content">
@@ -138,9 +155,17 @@
                 <input type="color" id="master-primary-color" style="height: 40px; flex: 1; padding: 0.2rem; cursor: pointer;" />
                 <label style="flex: 3; margin: 0;">Warna Utama (Aksen)</label>
             </div>
-            <div class="form-group" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem;">
+            <div class="form-group" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
                 <input type="color" id="master-header-color" style="height: 40px; flex: 1; padding: 0.2rem; cursor: pointer;" />
                 <label style="flex: 3; margin: 0;">Warna Header</label>
+            </div>
+            
+            <h4 class="mt-4 mb-2" style="font-size: 0.9rem; color: var(--primary);">Latar Belakang (Galeri HP)</h4>
+            <div class="form-group">
+                <input type="file" id="master-bg-file" accept="image/*" style="font-size: 0.8rem;" />
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem;">Pilih foto dari galeri. Kosongkan untuk pakai tema bawaan.</p>
+                <input type="hidden" id="master-bg-base64" />
+                <button id="btn-clear-bg" class="btn btn-secondary mt-2" style="font-size: 0.8rem; padding: 0.5rem 1rem;">Hapus Foto Latar</button>
             </div>
 
             <div class="modal-actions-column mt-4">
