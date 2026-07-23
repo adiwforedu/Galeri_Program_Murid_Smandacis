@@ -63,7 +63,12 @@ function loadApps() {
                 id: key,
                 ...data[key]
             }));
-            apps.sort((a, b) => a.id.localeCompare(b.id)); // Urutkan agar rapi
+            apps.sort((a, b) => {
+                const orderA = a.order !== undefined ? a.order : 999;
+                const orderB = b.order !== undefined ? b.order : 999;
+                if (orderA === orderB) return a.id.localeCompare(b.id);
+                return orderA - orderB;
+            });
             renderApps();
         } else {
             // Jika database kosong, tampilkan data default (TIDAK disave ke firebase otomatis karena belum login)
@@ -186,6 +191,7 @@ function renderApps(append = false) {
     apps.forEach(app => {
         const item = document.createElement('div');
         item.className = 'app-item';
+        item.setAttribute('data-id', app.id);
         
         item.innerHTML = `
                 <div class="app-glass">
@@ -215,7 +221,8 @@ function renderApps(append = false) {
 
     if (isAdmin) {
         const addBtn = document.createElement('div');
-        addBtn.className = 'app-item';
+        addBtn.className = 'app-item add-app-btn';
+        addBtn.setAttribute('data-id', 'add-new-app');
         addBtn.innerHTML = `
             <div class="app-glass" style="border: 2px dashed var(--border-color); background: transparent; box-shadow: none;">
                 <div class="app-icon" style="background-color: var(--primary);"><i class="fa-solid fa-plus"></i></div>
@@ -224,6 +231,32 @@ function renderApps(append = false) {
         `;
         addBtn.addEventListener('click', () => editApp(null));
         appsContainer.appendChild(addBtn);
+    }
+    
+    // SortableJS init
+    if (isAdmin && typeof Sortable !== 'undefined') {
+        if (window.sortableInstance) window.sortableInstance.destroy();
+        window.sortableInstance = new Sortable(appsContainer, {
+            animation: 150,
+            filter: '.add-app-btn', // Jangan biarkan tombol tambah digeser
+            onEnd: function (evt) {
+                const itemEls = appsContainer.querySelectorAll('.app-item');
+                let updates = {};
+                let currentOrder = 0;
+                itemEls.forEach((el) => {
+                    const id = el.getAttribute('data-id');
+                    if (id && id !== 'add-new-app') {
+                        updates[`apps/${id}/order`] = currentOrder++;
+                    }
+                });
+                if (database && !firebaseConfig.databaseURL.includes("dummy-preview-only")) {
+                    database.ref().update(updates);
+                }
+            }
+        });
+    } else if (window.sortableInstance) {
+        window.sortableInstance.destroy();
+        window.sortableInstance = null;
     }
 }
 

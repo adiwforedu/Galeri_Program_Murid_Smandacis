@@ -226,6 +226,14 @@ main.hidden { display: none; }
     animation: none; /* Hilangkan jiggle lama agar elegan */
     outline: 2px dashed rgba(0,0,0,0.1);
 }
+.admin-mode .app-item:not(.add-app-btn) .app-glass {
+    border: 2px dashed var(--primary);
+    animation: pulse-border 2s infinite;
+    cursor: grab;
+}
+.admin-mode .app-item:not(.add-app-btn) .app-glass:active {
+    cursor: grabbing;
+}
 .admin-mode .app-item:hover {
     outline: 2px solid var(--primary);
 }
