@@ -138,12 +138,18 @@ function applyGlobalTheme() {
     document.documentElement.style.setProperty('--header-bg', portalTheme.header || '#0f172a');
     
     const bgContainer = document.getElementById('app-bg-container');
-    if (bgContainer) {
+    const bgImage = document.getElementById('app-bg-image');
+    if (bgContainer && bgImage) {
         if (portalTheme.bgImage) {
-            bgContainer.style.backgroundImage = `url(${portalTheme.bgImage})`;
+            bgImage.style.backgroundImage = `url(${portalTheme.bgImage})`;
+            let posX = portalTheme.bgPosX !== undefined ? portalTheme.bgPosX : 50;
+            let posY = portalTheme.bgPosY !== undefined ? portalTheme.bgPosY : 0;
+            let scale = portalTheme.bgScale !== undefined ? portalTheme.bgScale : 100;
+            bgImage.style.backgroundPosition = `${posX}% ${posY}%`;
+            bgImage.style.transform = `scale(${scale / 100})`;
             bgContainer.classList.add('has-image');
         } else {
-            bgContainer.style.backgroundImage = 'none';
+            bgImage.style.backgroundImage = 'none';
             bgContainer.classList.remove('has-image');
         }
     }
@@ -229,8 +235,9 @@ function openApp(app) {
     
     appIframe.src = app.url;
     viewerTitle.textContent = app.name;
-    portalView.classList.remove('active');
-    viewerView.classList.add('active');
+    document.getElementById('btn-open-external').href = app.url; // Update link kompas
+    portalView.classList.add('hidden');
+    viewerView.classList.remove('hidden');
     document.getElementById('iframe-fallback').classList.add('hidden');
     
     appIframe.onerror = function() {
@@ -352,8 +359,8 @@ function enableAdminMode() {
 function setupEventListeners() {
     // Viewer Back
     document.getElementById('btn-back').addEventListener('click', () => {
-        viewerView.classList.remove('active');
-        portalView.classList.add('active');
+        viewerView.classList.add('hidden');
+        portalView.classList.remove('hidden');
         appIframe.src = 'about:blank';
     });
 
@@ -398,6 +405,15 @@ function setupEventListeners() {
             document.getElementById('master-primary-color').value = portalTheme.primary || '#3b82f6';
             document.getElementById('master-header-color').value = portalTheme.header || '#1e293b';
             
+            if (portalTheme.bgImage) {
+                document.getElementById('bg-pos-controls').classList.remove('hidden');
+                document.getElementById('master-bg-pos-y').value = portalTheme.bgPosY !== undefined ? portalTheme.bgPosY : 0;
+                document.getElementById('master-bg-pos-x').value = portalTheme.bgPosX !== undefined ? portalTheme.bgPosX : 50;
+                document.getElementById('master-bg-scale').value = portalTheme.bgScale !== undefined ? portalTheme.bgScale : 100;
+            } else {
+                document.getElementById('bg-pos-controls').classList.add('hidden');
+            }
+            
             document.getElementById('master-settings-modal').classList.remove('hidden');
         }
     });
@@ -438,26 +454,58 @@ function setupEventListeners() {
                 // Convert to base64 with 0.6 quality to keep size small
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
                 document.getElementById('master-bg-base64').value = dataUrl;
+                document.getElementById('bg-pos-controls').classList.remove('hidden');
                 
                 // Preview instantly
                 const bgContainer = document.getElementById('app-bg-container');
-                if (bgContainer) {
-                    bgContainer.style.backgroundImage = `url(${dataUrl})`;
+                const bgImage = document.getElementById('app-bg-image');
+                if (bgContainer && bgImage) {
+                    bgImage.style.backgroundImage = `url(${dataUrl})`;
                     bgContainer.classList.add('has-image');
                 }
-            }
+            };
             img.src = event.target.result;
         }
         reader.readAsDataURL(file);
     });
     
+    // Live preview for background position sliders
+    document.getElementById('master-bg-pos-y').addEventListener('input', function(e) {
+        const bgImage = document.getElementById('app-bg-image');
+        if (bgImage) {
+            const x = document.getElementById('master-bg-pos-x').value;
+            bgImage.style.backgroundPosition = `${x}% ${e.target.value}%`;
+        }
+    });
+    document.getElementById('master-bg-pos-x').addEventListener('input', function(e) {
+        const bgImage = document.getElementById('app-bg-image');
+        if (bgImage) {
+            const y = document.getElementById('master-bg-pos-y').value;
+            bgImage.style.backgroundPosition = `${e.target.value}% ${y}%`;
+        }
+    });
+    document.getElementById('master-bg-scale').addEventListener('input', function(e) {
+        const bgImage = document.getElementById('app-bg-image');
+        if (bgImage) {
+            bgImage.style.transform = `scale(${e.target.value / 100})`;
+        }
+    });
+    
     document.getElementById('btn-clear-bg').addEventListener('click', () => {
         document.getElementById('master-bg-file').value = '';
         document.getElementById('master-bg-base64').value = '';
+        document.getElementById('bg-pos-controls').classList.add('hidden');
         const bgContainer = document.getElementById('app-bg-container');
-        if (bgContainer) {
-            bgContainer.style.backgroundImage = 'none';
+        const bgImage = document.getElementById('app-bg-image');
+        if (bgContainer && bgImage) {
+            bgImage.style.backgroundImage = 'none';
+            bgImage.style.backgroundPosition = 'top center';
+            bgImage.style.transform = 'scale(1)';
             bgContainer.classList.remove('has-image');
+            
+            document.getElementById('master-bg-pos-y').value = 0;
+            document.getElementById('master-bg-pos-x').value = 50;
+            document.getElementById('master-bg-scale').value = 100;
         }
     });
 
@@ -471,9 +519,18 @@ function setupEventListeners() {
         portalTheme.header = document.getElementById('master-header-color').value;
         const newBg = document.getElementById('master-bg-base64').value;
         if (newBg !== undefined) {
-            if (newBg === '') portalTheme.bgImage = null;
-            else portalTheme.bgImage = newBg;
+            if (newBg === '') {
+                portalTheme.bgImage = null;
+                portalTheme.bgPosY = 0;
+                portalTheme.bgPosX = 50;
+                portalTheme.bgScale = 100;
+            } else {
+                portalTheme.bgImage = newBg;
+            }
         }
+        portalTheme.bgPosY = parseInt(document.getElementById('master-bg-pos-y').value) || 0;
+        portalTheme.bgPosX = parseInt(document.getElementById('master-bg-pos-x').value) || 50;
+        portalTheme.bgScale = parseInt(document.getElementById('master-bg-scale').value) || 100;
         
         localStorage.setItem('school_portal_colors', JSON.stringify(portalTheme));
         applyGlobalTheme();

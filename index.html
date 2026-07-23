@@ -16,8 +16,6 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="app-bg-container" class="app-bg-container"></div>
-    
     <button id="theme-toggle" class="theme-btn" title="Ganti Tema">
         <i class="fa-solid fa-moon"></i>
     </button>
@@ -40,8 +38,11 @@
         </header>
 
         <!-- Layar Utama / App Drawer -->
-        <div class="apps-grid" id="apps-container">
-            <!-- App Icons akan dirender di sini via JS -->
+        <div id="app-bg-container" class="app-bg-container">
+            <div id="app-bg-image"></div>
+            <div class="apps-grid" id="apps-container" style="position: relative; z-index: 2;">
+                <!-- App Icons akan dirender di sini via JS -->
+            </div>
         </div>
 
         <!-- Footer -->
@@ -164,8 +165,20 @@
             <div class="form-group">
                 <input type="file" id="master-bg-file" accept="image/*" style="font-size: 0.8rem;" />
                 <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem;">Pilih foto dari galeri. Kosongkan untuk pakai tema bawaan.</p>
+                
+                <div id="bg-pos-controls" class="mt-3 hidden">
+                    <label style="font-size: 0.8rem; margin-bottom: 0.2rem;">Posisi Vertikal Latar</label>
+                    <input type="range" id="master-bg-pos-y" min="0" max="100" value="0" style="width: 100%; margin-bottom: 0.8rem;">
+                    
+                    <label style="font-size: 0.8rem; margin-bottom: 0.2rem;">Posisi Horizontal Latar</label>
+                    <input type="range" id="master-bg-pos-x" min="0" max="100" value="50" style="width: 100%; margin-bottom: 0.8rem;">
+                    
+                    <label style="font-size: 0.8rem; margin-bottom: 0.2rem;">Zoom Latar (Skala)</label>
+                    <input type="range" id="master-bg-scale" min="100" max="300" value="100" style="width: 100%;">
+                </div>
+
                 <input type="hidden" id="master-bg-base64" />
-                <button id="btn-clear-bg" class="btn btn-secondary mt-2" style="font-size: 0.8rem; padding: 0.5rem 1rem;">Hapus Foto Latar</button>
+                <button id="btn-clear-bg" class="btn btn-secondary mt-3" style="font-size: 0.8rem; padding: 0.5rem 1rem;">Hapus Foto Latar</button>
             </div>
 
             <div class="modal-actions-column mt-4">
@@ -193,10 +206,11 @@
     <!-- Modal Sedang Dikembangkan -->
     <div id="construction-modal" class="modal-overlay hidden">
         <div class="modal-content text-center">
-            <div class="construction-icon">
-                <i class="fa-solid fa-screwdriver-wrench fa-bounce"></i>
+            <div class="construction-icon" style="display: flex; justify-content: center; gap: 0; align-items: center; position: relative; left: -10px;">
+                <i class="fa-solid fa-hammer hammer-animate" style="z-index: 2; margin-right: -5px;"></i>
+                <i class="fa-solid fa-gear fa-spin" style="font-size: 0.75em; z-index: 1; margin-top: 15px;"></i>
             </div>
-            <h2 class="blinking-text">DIANTOS NUJU DIKEMBANGKEUN</h2>
+            <h2 class="blinking-text">Diantos nuju dikembangkeun...</h2>
             <button id="btn-close-construction" class="btn-primary full-width mt-4">Tutup</button>
         </div>
     </div>

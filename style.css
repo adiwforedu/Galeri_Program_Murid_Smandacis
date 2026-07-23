@@ -35,21 +35,33 @@ body {
 }
 
 .app-bg-container {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    z-index: -1;
+    position: relative;
+    flex: 1; /* Penuhi ruang antara header dan footer */
+    width: 100%;
+    margin-top: -30px; /* Selipkan di belakang lengkungan header */
+    margin-bottom: -20px; /* Selipkan di belakang lengkungan footer */
+    padding-top: calc(30px + 2rem); /* Jaga jarak aman ikon dari header */
+    padding-bottom: calc(20px + 1rem); /* Jaga jarak aman ikon dari footer */
+    padding-bottom: calc(20px + 1rem); /* Jaga jarak aman ikon dari footer */
+    overflow: hidden;
+}
+#app-bg-image {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
     background-size: cover;
-    background-position: center;
+    background-position: top center;
     background-repeat: no-repeat;
-    transition: background-image 0.5s ease;
+    transition: background-image 0.5s ease, transform 0.1s ease;
+    z-index: 0;
 }
 .app-bg-container.has-image::after {
     content: "";
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.5); /* Gelap untuk kontras */
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(0,0,0,0.15); /* Gelap sangat tipis */
+    backdrop-filter: blur(2px); /* Blur nyaris hilang agar foto sangat jelas */
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 1;
 }
 
 main {
@@ -69,7 +81,7 @@ main.hidden { display: none; }
     padding: 1.5rem 1.5rem;
     border-bottom-left-radius: 30px;
     border-bottom-right-radius: 30px;
-    margin-bottom: 2rem;
+    margin-bottom: 0; /* Margin dihapus, diganti padding di container */
     
     /* Bintik putih pada header sesuai permintaan */
     background-image: radial-gradient(rgba(255, 255, 255, 0.2) 2px, transparent 2px);
@@ -109,9 +121,16 @@ main.hidden { display: none; }
 .header-content p.header-desc {
     font-size: clamp(0.65rem, 3vw, 0.8rem);
     color: #94a3b8;
-    font-weight: 400;
+    font-weight: 500;
     margin: 0 auto;
     white-space: nowrap;
+    transition: color 0.3s, text-shadow 0.3s;
+}
+
+/* Pintar: Jika ada gambar background, ubah teks jadi putih dengan bayangan hitam agar selalu terbaca */
+.app-bg-container.has-image .app-label {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6) !important;
 }
 
 .admin-mode .header-content {
@@ -125,6 +144,8 @@ main.hidden { display: none; }
 }
 
 .apps-grid {
+    position: relative;
+    z-index: 1; /* Supaya berada di atas efek blur latar belakang */
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
@@ -198,6 +219,7 @@ main.hidden { display: none; }
     max-width: 140px; /* Prevent text from spreading too wide */
     word-wrap: break-word;
     line-height: 1.25;
+    transition: color 0.3s ease, text-shadow 0.3s ease;
 }
 
 .admin-mode .app-item {
@@ -397,14 +419,26 @@ main.hidden { display: none; }
 .blinking-text {
     animation: blink 1.2s infinite;
     color: #ea580c; /* Warna orange peringatan */
-    font-weight: 800;
+    font-weight: 700;
     margin-top: 1rem;
     margin-bottom: 0.5rem;
-    font-size: clamp(1rem, 4vw, 1.3rem);
+    font-size: clamp(0.9rem, 3.5vw, 1.1rem);
     text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
 }
+@keyframes hammer-hit {
+    0% { transform: rotate(0deg); }
+    15% { transform: rotate(-20deg); } /* Tarik palu ke belakang */
+    30% { transform: rotate(35deg); }  /* Pukul roda gigi! */
+    40% { transform: rotate(35deg); }  /* Tahan sedikit saat memukul */
+    60% { transform: rotate(0deg); }   /* Kembali ke posisi awal */
+    100% { transform: rotate(0deg); }
+}
+.hammer-animate {
+    transform-origin: bottom left; /* Sumbu putar di ujung gagang palu */
+    animation: hammer-hit 1s ease-in-out infinite;
+}
 .construction-icon {
-    font-size: clamp(3.5rem, 12vw, 5rem);
+    font-size: clamp(2rem, 8vw, 3rem); /* Diperkecil agar tidak menabrak teks */
     color: #475569;
     margin-bottom: 0.5rem;
 }
