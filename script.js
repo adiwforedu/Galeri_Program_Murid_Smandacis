@@ -36,7 +36,7 @@ function init() {
     initTheme();
     startClock();
     setupEventListeners();
-    loadHeaderSettings();
+    loadGlobalSettings();
     
     // Tampilkan animasi loading
     appsContainer.innerHTML = '<div style="color: var(--text-main); text-align: center; grid-column: 1/-1; margin-top: 3rem;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p class="mt-3" style="opacity:0.7">Menyambungkan ke database...</p></div>';
@@ -98,14 +98,25 @@ function loadGlobalTheme() {
     applyGlobalTheme();
 }
 
-function loadHeaderSettings() {
+function loadGlobalSettings() {
     if (!database || firebaseConfig.databaseURL.includes("dummy-preview-only")) return;
     
     database.ref('settings/header').on('value', (snapshot) => {
         const data = snapshot.val();
         if (data) {
-            if (data.title) document.getElementById('header-title-text').textContent = data.title;
+            if (data.title) {
+                const isEditing = document.getElementById('header-title-text').innerHTML.includes('fa-pen');
+                document.getElementById('header-title-text').innerHTML = data.title + (isEditing ? ' <i class="fa-solid fa-pen" style="font-size: 0.8rem; margin-left: 0.5rem; color: rgba(255,255,255,0.7);"></i>' : '');
+            }
             if (data.desc) document.getElementById('header-desc-text').textContent = data.desc;
+        }
+    });
+
+    database.ref('settings/footer').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.text) {
+            const footer = document.getElementById('footer-text');
+            if(footer) footer.innerHTML = data.text;
         }
     });
 }
@@ -289,24 +300,14 @@ function enableAdminMode() {
     isAdmin = true;
     passwordModal.classList.add('hidden');
     portalView.classList.add('admin-mode');
-    document.getElementById('btn-edit-header').classList.remove('hidden');
     
-    btnAdminToggle.innerHTML = `
-        <div class="dock-icon bg-red"><i class="fa-solid fa-check"></i></div>
-        <span>Selesai</span>
-    `;
+    btnAdminToggle.innerHTML = `<i class="fa-solid fa-check"></i>`;
+    btnAdminToggle.classList.add('admin-btn-active');
     
-    const dock = document.querySelector('.os-dock');
-    if (!document.getElementById('btn-global-settings')) {
-        const settingsBtn = document.createElement('button');
-        settingsBtn.className = 'dock-app';
-        settingsBtn.id = 'btn-global-settings';
-        settingsBtn.innerHTML = `
-            <div class="dock-icon" style="background-color: var(--primary)"><i class="fa-solid fa-palette"></i></div>
-            <span>Warna Tema</span>
-        `;
-        settingsBtn.addEventListener('click', openSettingsModal);
-        dock.appendChild(settingsBtn);
+    // Tampilkan tooltip ke header
+    const headerTitle = document.getElementById('header-title-text');
+    if (!headerTitle.innerHTML.includes('fa-pen')) {
+        headerTitle.innerHTML += ' <i class="fa-solid fa-pen" style="font-size: 0.8rem; margin-left: 0.5rem; color: rgba(255,255,255,0.7);"></i>';
     }
     
     renderApps(); 
@@ -323,6 +324,7 @@ function setupEventListeners() {
     // Admin Toggle
     btnAdminToggle.addEventListener('click', () => {
         if (isAdmin) {
+            // Langsung Logout jika klik Ceklis
             isAdmin = false;
             try {
                 if (window.firebase && firebase.auth && !firebaseConfig.databaseURL.includes("dummy-preview-only")) {
@@ -330,18 +332,37 @@ function setupEventListeners() {
                 }
             } catch(e) { console.error("SignOut error", e); }
             portalView.classList.remove('admin-mode');
-            document.getElementById('btn-edit-header').classList.add('hidden');
-            btnAdminToggle.innerHTML = `
-                <div class="dock-icon bg-gray"><i class="fa-solid fa-gear"></i></div>
-                <span>Admin</span>
-            `;
-            const settingsBtn = document.getElementById('btn-global-settings');
-            if (settingsBtn) settingsBtn.remove();
+            
+            btnAdminToggle.innerHTML = `<i class="fa-solid fa-gear"></i>`;
+            btnAdminToggle.classList.remove('admin-btn-active');
+            
+            // Hapus ikon pensil dari header
+            const headerTitle = document.getElementById('header-title-text');
+            headerTitle.innerHTML = headerTitle.innerHTML.replace(/ <i class="fa-solid fa-pen".*<\/i>/, '');
+            
             renderApps();
         } else {
             passwordModal.classList.remove('hidden');
             document.getElementById('admin-password').value = '';
             setTimeout(() => document.getElementById('admin-password').focus(), 100);
+        }
+    });
+
+    // Edit Header & Tema (Klik Header saat Admin Mode)
+    document.querySelector('.header-content').addEventListener('click', () => {
+        if (isAdmin) {
+            // Buka Master Settings Modal
+            let cleanTitle = document.getElementById('header-title-text').innerHTML.replace(/ <i class="fa-solid fa-pen".*<\/i>/, '');
+            document.getElementById('master-header-title').value = cleanTitle;
+            document.getElementById('master-header-desc').value = document.getElementById('header-desc-text').textContent;
+            
+            const footerEl = document.getElementById('footer-text');
+            document.getElementById('master-footer-text').value = footerEl ? footerEl.innerHTML : '';
+            
+            document.getElementById('master-primary-color').value = portalTheme.primary || '#3b82f6';
+            document.getElementById('master-header-color').value = portalTheme.header || '#1e293b';
+            
+            document.getElementById('master-settings-modal').classList.remove('hidden');
         }
     });
 
@@ -354,34 +375,49 @@ function setupEventListeners() {
         if (e.key === 'Enter') authenticateAdmin();
     });
 
-    // Header Form Modal
-    document.getElementById('btn-edit-header').addEventListener('click', () => {
-        document.getElementById('form-header-title').value = document.getElementById('header-title-text').textContent;
-        document.getElementById('form-header-desc').value = document.getElementById('header-desc-text').textContent;
-        document.getElementById('header-form-modal').classList.remove('hidden');
+    // Master Settings Modal
+    document.getElementById('btn-cancel-master').addEventListener('click', () => {
+        document.getElementById('master-settings-modal').classList.add('hidden');
     });
 
-    document.getElementById('btn-cancel-header-form').addEventListener('click', () => {
-        document.getElementById('header-form-modal').classList.add('hidden');
-    });
-
-    document.getElementById('btn-submit-header-form').addEventListener('click', () => {
-        const title = document.getElementById('form-header-title').value || 'Galeri Program Siswa';
-        const desc = document.getElementById('form-header-desc').value || 'Kumpulan akses cepat layanan dan program unggulan.';
+    document.getElementById('btn-submit-master').addEventListener('click', () => {
+        const title = document.getElementById('master-header-title').value || 'Galeri Program Siswa';
+        const desc = document.getElementById('master-header-desc').value || 'Kumpulan akses cepat...';
+        const footerText = document.getElementById('master-footer-text').value || '&copy; 2026 Smandacis';
         
+        // Save Theme
+        portalTheme.primary = document.getElementById('master-primary-color').value;
+        portalTheme.header = document.getElementById('master-header-color').value;
+        localStorage.setItem('school_portal_colors', JSON.stringify(portalTheme));
+        applyGlobalTheme();
+        
+        // Save Header & Footer (Dummy mode)
         if (!database || firebaseConfig.databaseURL.includes("dummy-preview-only")) {
-            document.getElementById('header-title-text').textContent = title;
+            document.getElementById('header-title-text').innerHTML = title + ' <i class="fa-solid fa-pen" style="font-size: 0.8rem; margin-left: 0.5rem; color: rgba(255,255,255,0.7);"></i>';
             document.getElementById('header-desc-text').textContent = desc;
-            document.getElementById('header-form-modal').classList.add('hidden');
+            const footerEl = document.getElementById('footer-text');
+            if (footerEl) footerEl.innerHTML = footerText;
+            
+            document.getElementById('master-settings-modal').classList.add('hidden');
             return;
         }
         
-        database.ref('settings/header').set({ title, desc })
-            .then(() => document.getElementById('header-form-modal').classList.add('hidden'))
-            .catch(e => alert("Gagal menyimpan header: " + e.message));
+        // Save to Firebase
+        Promise.all([
+            database.ref('settings/header').set({ title, desc }),
+            database.ref('settings/footer').set({ text: footerText })
+        ]).then(() => {
+            document.getElementById('header-title-text').innerHTML = title + ' <i class="fa-solid fa-pen" style="font-size: 0.8rem; margin-left: 0.5rem; color: rgba(255,255,255,0.7);"></i>';
+            document.getElementById('master-settings-modal').classList.add('hidden');
+        }).catch(e => alert("Gagal menyimpan pengaturan: " + e.message));
     });
 
-    // Form Modal
+    document.getElementById('btn-logout-admin').addEventListener('click', () => {
+        document.getElementById('master-settings-modal').classList.add('hidden');
+        document.getElementById('btn-admin-toggle').click(); // Trigger fungsi logout di atas
+    });
+
+    // Form Modal Apps
     document.getElementById('btn-cancel-form').addEventListener('click', () => {
         appFormModal.classList.add('hidden');
     });
@@ -391,12 +427,6 @@ function setupEventListeners() {
         document.getElementById('delete-app-id').value = document.getElementById('form-id').value;
         deleteModal.classList.remove('hidden');
     });
-
-    // Settings
-    document.getElementById('btn-cancel-settings').addEventListener('click', () => {
-        document.getElementById('settings-modal').classList.add('hidden');
-    });
-    document.getElementById('btn-submit-settings').addEventListener('click', saveSettingsForm);
 
     // Delete Modal
     document.getElementById('btn-cancel-delete').addEventListener('click', () => {
@@ -426,24 +456,6 @@ function setupEventListeners() {
         localStorage.setItem('school_portal_theme', isDark ? 'dark' : 'light');
         themeToggle.innerHTML = isDark ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
     });
-}
-
-function openSettingsModal() {
-    document.getElementById('settings-modal').classList.remove('hidden');
-    document.getElementById('setting-primary-color').value = portalTheme.primary;
-    document.getElementById('setting-header-color').value = portalTheme.header;
-}
-
-function saveSettingsForm() {
-    portalTheme.primary = document.getElementById('setting-primary-color').value;
-    portalTheme.header = document.getElementById('setting-header-color').value;
-    localStorage.setItem('school_portal_colors', JSON.stringify(portalTheme));
-    applyGlobalTheme();
-    
-    const settingsBtnIcon = document.querySelector('#btn-global-settings .dock-icon');
-    if (settingsBtnIcon) settingsBtnIcon.style.backgroundColor = portalTheme.primary;
-    
-    document.getElementById('settings-modal').classList.add('hidden');
 }
 
 init();
